@@ -248,6 +248,7 @@ private:
 	void RegisterIoHandlers();
 	void Reset(uint8_t state);
 	void SoftLimit(const accumulator_array_t &in, scaled_array_t &out) noexcept;
+	void SetLevelCallback(const AudioFrame<float> &level);
 	void StopPlayback();
 	void UpdateDmaAddress(uint8_t new_address);
 	void UpdateWaveMsw(int32_t &addr) const noexcept;
@@ -278,6 +279,7 @@ private:
 	Voice *voice = nullptr;
 	DmaChannel *dma_channel = nullptr;
 	MixerChannel *audio_channel = nullptr;
+	AudioFrame<float> mixer_level = {1, 1};
 	uint8_t &adlib_command_reg = adlib_commandreg;
 
 	// Port address
@@ -592,9 +594,13 @@ Gus::Gus(uint16_t port, uint8_t dma, uint8_t irq, const std::string &ultradir)
 
 	RegisterIoHandlers();
 
-	// Register the Audio and DMA callbacks
+	// Register the Audio and DMA channels
 	audio_channel = mixer_channel.Install(
 		std::bind(&Gus::AudioCallback, this, std::placeholders::_1), 1, "GUS");
+	assert(audio_channel);
+	// Let the mixer command adjust the GUS's internal amplitude level's
+	const auto set_level_callback = std::bind(&Gus::SetLevelCallback, this, _1);
+	audio_channel->RegisterLevelCallBack(set_level_callback);
 
 	UpdateDmaAddress(dma);
 
@@ -617,6 +623,13 @@ void Gus::ActivateVoices(uint8_t requested_voices)
 	}
 }
 
+void Gus::SetLevelCallback(const AudioFrame<float> &requested_level)
+{
+	// Allow volumes to scale from silent up to 20-fold
+	mixer_level = {clamp(requested_level.left, 0.0f, 20.0f),
+	                clamp(requested_level.right, 0.0f, 20.0f)};
+}
+
 void Gus::AudioCallback(const uint16_t requested_frames)
 {
 	assert(requested_frames <= BUFFER_FRAMES);
@@ -631,6 +644,13 @@ void Gus::AudioCallback(const uint16_t requested_frames)
 		v->get()->GenerateSamples(accumulator, ram, vol_scalars,
 		                          pan_scalars, requested_frames);
 		++v;
+	}
+
+	// Pre-scale the stream by the user-defined mixer level
+	auto val = accumulator.begin();
+	while (val < accumulator.end()) {
+		*val++ *= mixer_level.left;
+		*val++ *= mixer_level.right;
 	}
 
 	SoftLimit(accumulator, scaled);
@@ -937,10 +957,10 @@ void Gus::PrintStats()
 	}
 
 	// Calculate and print info about the volume
-	const auto mixer_scalar = std::max(audio_channel->volmain[0],
-	                                   audio_channel->volmain[1]);
+	const auto scalar = std::max(mixer_level->left,
+	                             mixer_level->right);
 	const auto peak_sample = std::max(peak.left, peak.right);
-	auto peak_ratio = mixer_scalar * peak_sample / AUDIO_SAMPLE_MAX;
+	auto peak_ratio = scalar * peak_sample / AUDIO_SAMPLE_MAX;
 
 	// It's expected and normal for multi-voice audio to periodically
 	// accumulate beyond the max, which is gracefully scaled without
@@ -950,12 +970,14 @@ void Gus::PrintStats()
 	LOG_MSG("GUS: Peak amplitude reached %.0f%% of max",
 	        100 * static_cast<double>(peak_ratio));
 
-	// Make a suggestion if the peak volume was well below 3 dB
-	if (peak_ratio < 0.6f) {
+	// Make a suggestion if the peak volume was well below 3 dB, but without
+	// the influence of the mixer's scalar because the user might have
+	// deliberately set it low.
+	if (peak_ratio / scalar < 0.6f) {
 		const auto multiplier = static_cast<uint16_t>(
-		        100 * mixer_scalar / peak_ratio);
+		        100 * scalar / peak_ratio);
 		LOG_MSG("GUS: If it should be louder, %s %u",
-		        fabs(mixer_scalar - 1.0f) > 0.01f ? "adjust mixer gus to"
+		        fabs(scalar - 1.0f) > 0.01f ? "adjust mixer gus to"
 		                                          : "use: mixer gus",
 		        multiplier);
 	}
