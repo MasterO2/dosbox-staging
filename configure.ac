@@ -593,6 +593,26 @@ else
    AC_MSG_RESULT(no)
 fi
 
+dnl Unit Tests
+dnl ----------
+dnl 
+AC_ARG_ENABLE([tests],
+              AS_HELP_STRING([--enable-tests],
+                             [Build Unit Tests (requires Google Test framework)]))
+
+if test "${enable_tests}" = "yes" ; then
+    AC_MSG_CHECKING(for Google Test framework)
+    AC_COMPILE_IFELSE(
+        [AC_LANG_SOURCE([
+            #include <gtest/gtest.h>
+        ])],
+        [AC_MSG_RESULT(yes); HAVE_GTEST=yes],
+        [AC_MSG_RESULT(no);
+         AC_MSG_ERROR(Google Test headers not found)])
+fi
+
+AM_CONDITIONAL(BUILD_TESTS, test "${HAVE_GTEST}" = "yes")
+
 dnl Check for mprotect. Needed for 64 bits linux
 AH_TEMPLATE(C_HAVE_MPROTECT,[Define to 1 if you have the mprotect function])
 AC_CHECK_HEADER([sys/mman.h], [
@@ -697,6 +717,8 @@ AH_BOTTOM([#if C_ATTRIBUTE_FASTCALL
 
 AC_CONFIG_FILES([
 Makefile
+docs/Makefile
+include/Makefile
 src/Makefile
 src/cpu/Makefile
 src/cpu/core_full/Makefile
@@ -722,7 +744,6 @@ src/misc/Makefile
 src/shell/Makefile
 src/platform/Makefile
 src/platform/visualc/Makefile
-include/Makefile
-docs/Makefile
+tests/Makefile
 ])
 AC_OUTPUT

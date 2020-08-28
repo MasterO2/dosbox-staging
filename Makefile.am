@@ -1,7 +1,8 @@
 # Main Makefile for DOSBox
 
 EXTRA_DIST = autogen.sh
-SUBDIRS = src include docs
+
+SUBDIRS = src include docs tests
 
 # Per the auto-tools clean guidelines:
 # https://www.gnu.org/savannah-checkouts/gnu/automake/manual/html_node/Clean.html#Clean
@@ -31,3 +32,14 @@ distclean-local:
 	-rm -rf autom4te.cache
 	-find . -name Makefile.in -type f -delete
 	-find . -name .deps -type d -exec rm -rf {} +
+
+# Add convenience 'run' and 'test' targets to invoke dosbox binary or
+# or unit-test binary
+
+.PHONY: run test
+
+run: all
+	./src/dosbox$(EXEEXT)
+
+test: all
+	./tests/tests$(EXEEXT)
