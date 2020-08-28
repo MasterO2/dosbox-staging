@@ -18,7 +18,8 @@ tests_CXXFLAGS = \
 	-Wl,-Bdynamic
 
 tests_SOURCES = \
-	example.cpp
+	example.cpp \
+	support.cpp
 
 tests_LDADD = ../src/misc/libmisc.a
 
