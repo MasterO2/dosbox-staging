@@ -50,6 +50,12 @@ jobs:
             flags: -c gcc
             config_flags: --disable-dynamic-x86 --enable-debug
             max_warnings: 422
+          - name: Unit Tests
+            os: ubuntu-20.04
+            config_flags: --enable-tests
+            flags: -c gcc
+            run_tests: true
+            max_warnings: -1
 
     steps:
       - uses: actions/checkout@v2
@@ -75,6 +81,9 @@ jobs:
         run:  ./scripts/log-env.sh
       - name: Build
         run:  ./scripts/build.sh -t Debug ${{ matrix.conf.flags }} ${{ matrix.conf.config_flags }}
+      - name: Run tests
+        if:   matrix.conf.run_tests == 'true'
+        run:  ./tests/tests
       - name: Summarize warnings
         env:
           MAX_WARNINGS: ${{ matrix.conf.max_warnings }}
