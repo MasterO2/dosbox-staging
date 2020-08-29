@@ -53,6 +53,7 @@ jobs:
           - name: Unit Tests
             os: ubuntu-20.04
             config_flags: --enable-tests
+            add_packages: libgtest-dev
             flags: -c gcc
             run_tests: true
             max_warnings: -1
@@ -61,7 +62,7 @@ jobs:
       - uses: actions/checkout@v2
       - run:  sudo apt-get update
       - name: Install C++ compiler and libraries
-        run:  sudo apt-get install -y $(./scripts/list-build-dependencies.sh -m apt ${{ matrix.conf.flags }})
+        run:  sudo apt-get install -y $(./scripts/list-build-dependencies.sh -m apt ${{ matrix.conf.flags }}) ${{ matrix.conf.add_packages }}
       - name:  Prepare compiler cache
         id:    prep-ccache
         shell: bash
