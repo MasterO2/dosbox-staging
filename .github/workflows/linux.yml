@@ -83,7 +83,7 @@ jobs:
       - name: Build
         run:  ./scripts/build.sh -t Debug ${{ matrix.conf.flags }} ${{ matrix.conf.config_flags }}
       - name: Run tests
-        if:   matrix.conf.run_tests == 'true'
+        if:   matrix.conf.run_tests
         run:  ./tests/tests
       - name: Summarize warnings
         env:
