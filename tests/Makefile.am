@@ -13,8 +13,8 @@ tests_CXXFLAGS = \
 	$(AM_CXXFLAGS) \
 	$(CXXFLAGS) \
 	-Wl,-Bstatic \
-	-lgtest \
 	-lgtest_main \
+	-lgtest \
 	-Wl,-Bdynamic
 
 tests_SOURCES = \
