@@ -607,7 +607,7 @@ if test "${enable_tests}" = "yes" ; then
     AC_MSG_CHECKING(for Google Test framework (static lib))
     CXXFLAGS="-Wl,-Bstatic -lgtest_main -lgtest -Wl,-Bdynamic"
     AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([
+        [AC_LANG_SOURCE([
             #include <gtest/gtest.h>
 	    namespace { TEST(Foo, Bar) { ASSERT_TRUE(true); } }
         ])],
@@ -618,7 +618,7 @@ if test "${enable_tests}" = "yes" ; then
     AC_MSG_CHECKING(for Google Test framework (shared lib))
     CXXFLAGS="-lgtest_main -lgtest"
     AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([
+        [AC_LANG_SOURCE([
             #include <gtest/gtest.h>
 	    namespace { TEST(Foo, Bar) { ASSERT_TRUE(true); } }
         ])],
