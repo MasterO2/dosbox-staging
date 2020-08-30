@@ -6,16 +6,12 @@ SUBDIRS = ../src/misc
 
 bin_PROGRAMS = tests
 
-# FIXME
-# some Linux distributions provide only dynamic libs (Fedora) while other
-# provide only static libs (Ubuntu).
-tests_CXXFLAGS = \
-	$(AM_CXXFLAGS) \
-	$(CXXFLAGS) \
-	-Wl,-Bstatic \
-	-lgtest_main \
-	-lgtest \
-	-Wl,-Bdynamic
+tests_CXXFLAGS = $(AM_CXXFLAGS) $(CXXFLAGS)
+if USE_GTEST_STATIC
+tests_CXXFLAGS += -Wl,-Bstatic -lgtest_main -lgtest -Wl,-Bdynamic
+else
+tests_CXXFLAGS += -lgtest_main -lgtest
+endif
 
 tests_SOURCES = \
 	example.cpp \
